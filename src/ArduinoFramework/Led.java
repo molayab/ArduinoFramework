@@ -36,9 +36,15 @@ public class Led extends Arduino {
 			e.printStackTrace();
 		}
 	}
+	
+	public void power(int val) {
+		try {
+			write(pin, val);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	@Override
-	public void read(int data) {
-		
-	}
+	public void read(int pin, int data) { }
 }

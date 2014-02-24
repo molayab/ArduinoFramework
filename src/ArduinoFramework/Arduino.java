@@ -21,9 +21,10 @@ import java.util.Enumeration;
 
 public abstract class Arduino implements SerialPortEventListener {
 	public static final int OUTPUT = 0xFF;
-	public static final int INPUT = 0xD9;
+	public static final int INPUT = 0x00;
 	public static final int DIGITAL = 0xFF;
-	public static final int ANALOG = 0xD9;
+	public static final int ANALOG = 0x00;
+	public static final int PACKET_SIZE = 2;
 	private static final String PORT_NAMES[] = { 
 	    	"/dev/tty.usbmodem", 	// OSX
 //	    	"/dev/tty", 	// Linux
@@ -34,6 +35,8 @@ public abstract class Arduino implements SerialPortEventListener {
 	private BufferedReader input;
 	private int mode;
 	private int type;
+	private int[] data = new int[2];
+	private int pointer = 0;
 	private static SerialPort port;
 	
 	public Arduino() {
@@ -47,7 +50,7 @@ public abstract class Arduino implements SerialPortEventListener {
 		        if ( comm_id.getName().equals(portName) 
 		          || comm_id.getName().startsWith(portName)) 
 		        {
-		        	init(comm_id, 9600);
+		        	init(comm_id, 115200);
 		            break;
 		        }
 		    }
@@ -55,7 +58,7 @@ public abstract class Arduino implements SerialPortEventListener {
 	}
 	
 	public Arduino(CommPortIdentifier comm) {
-		init(comm, 9600);
+		init(comm, 115200);
 	}
 	
 	public Arduino(CommPortIdentifier comm, int baud) {
@@ -91,16 +94,20 @@ public abstract class Arduino implements SerialPortEventListener {
 	}
 
 	public void write(byte[] data) throws IOException {
-		port.getOutputStream().write(data);
+		synchronized (this) {
+			port.getOutputStream().write(data);
+		}
 	}
 	
 	public void write(int pin, int value) throws IOException {
-		byte[] send = {(byte)pin, (byte)mode, (byte)value, (byte)type};
-		
-		port.getOutputStream().write(send);
+		synchronized (this) {
+			byte[] send = {(byte)pin, (byte)mode, (byte)value, (byte)type};
+			
+			port.getOutputStream().write(send);
+		}
 	}
 	
-	public synchronized void close() {
+	public void close() {
 		if (port != null) {
 			port.removeEventListener();
 			port.close();
@@ -111,18 +118,24 @@ public abstract class Arduino implements SerialPortEventListener {
 		return CommPortIdentifier.getPortIdentifiers();
 	}
 
-	public abstract void read(int data);
+	public abstract void read(int pin, int data);
 
 	@Override
-	public synchronized void serialEvent(SerialPortEvent arg0) {
+	public void serialEvent(SerialPortEvent arg0) {
 		if (arg0.getEventType() == SerialPortEvent.DATA_AVAILABLE) {
-			try {
-				read(input.read());
-				
-				String inputLine=input.readLine();
-				System.out.println(inputLine);
-			} catch (Exception e) {
-				System.err.println(e.getMessage());
+			synchronized (this) {
+				try {
+					if (pointer < PACKET_SIZE) {
+						data[pointer] = input.read();
+						++pointer;
+						System.out.println(pointer);
+					} else {
+						read(data[0], data[1]);
+						pointer = 0;
+					}
+				} catch (Exception e) {
+					System.err.println(e.getMessage());
+				}
 			}
 		}
 		
