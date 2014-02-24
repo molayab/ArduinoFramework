@@ -1,3 +1,11 @@
+//
+//  Led.java
+//  ArduinoFramework Java
+//
+//  Created by Mateo Olaya Bernal on 1/22/14.
+//  Copyright (c) 2014 Mateo Olaya Bernal. All rights reserved.
+//
+
 package ArduinoFramework;
 
 import java.io.IOException;
@@ -7,6 +15,8 @@ public class Led extends Arduino {
 	
 	public Led(int pin) {
 		super();
+		setMode(Arduino.OUTPUT);
+		setType(Arduino.DIGITAL);
 		
 		this.pin = pin;
 	}

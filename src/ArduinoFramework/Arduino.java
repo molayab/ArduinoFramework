@@ -1,3 +1,11 @@
+//
+//  Arduino.java
+//  ArduinoFramework Java
+//
+//  Created by Mateo Olaya Bernal on 1/22/14.
+//  Copyright (c) 2014 Mateo Olaya Bernal. All rights reserved.
+//
+
 package ArduinoFramework;
 
 import gnu.io.CommPortIdentifier;
@@ -8,13 +16,14 @@ import gnu.io.SerialPortEventListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.util.Enumeration;
 
 
 public abstract class Arduino implements SerialPortEventListener {
-	public static final int OUTPUT = 0;
-	public static final int INPUT = 1;
+	public static final int OUTPUT = 0xFF;
+	public static final int INPUT = 0xD9;
+	public static final int DIGITAL = 0xFF;
+	public static final int ANALOG = 0xD9;
 	private static final String PORT_NAMES[] = { 
 	    	"/dev/tty.usbmodem", 	// OSX
 //	    	"/dev/tty", 	// Linux
@@ -23,7 +32,8 @@ public abstract class Arduino implements SerialPortEventListener {
 	private final int TIMEOUT = 1;
 	
 	private BufferedReader input;
-	private OutputStream output;
+	private int mode;
+	private int type;
 	private static SerialPort port;
 	
 	public Arduino() {
@@ -61,7 +71,6 @@ public abstract class Arduino implements SerialPortEventListener {
 						SerialPort.STOPBITS_1, 
 						SerialPort.PARITY_NONE);
 				
-				output = port.getOutputStream();
 				input  = new BufferedReader(new InputStreamReader(port.getInputStream()));
 				
 				port.addEventListener(this);
@@ -72,13 +81,21 @@ public abstract class Arduino implements SerialPortEventListener {
 			}
 		}
 	}
-	
+
+	public void setType(int type) {
+		this.type = type;
+	}
+
+	public void setMode(int mode) {
+		this.mode = mode;
+	}
+
 	public void write(byte[] data) throws IOException {
 		port.getOutputStream().write(data);
 	}
 	
 	public void write(int pin, int value) throws IOException {
-		byte[] send = {(byte) pin, (byte) value};
+		byte[] send = {(byte)pin, (byte)mode, (byte)value, (byte)type};
 		
 		port.getOutputStream().write(send);
 	}

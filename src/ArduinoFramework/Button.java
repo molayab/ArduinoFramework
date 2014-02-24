@@ -1,3 +1,11 @@
+//
+//  Button.java
+//  ArduinoFramework Java
+//
+//  Created by Mateo Olaya Bernal on 1/22/14.
+//  Copyright (c) 2014 Mateo Olaya Bernal. All rights reserved.
+//
+
 package ArduinoFramework;
 
 public class Button extends Arduino {
