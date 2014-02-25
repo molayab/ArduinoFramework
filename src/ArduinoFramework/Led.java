@@ -17,7 +17,7 @@ public class Led extends Arduino {
 		super();
 		setMode(Arduino.OUTPUT);
 		setType(Arduino.DIGITAL);
-		new Thread(this).start();
+		
 		
 		this.pin = pin;
 	}
@@ -38,9 +38,9 @@ public class Led extends Arduino {
 		}
 	}
 	
-	public void power(int val) {
+	public void power(float val) {
 		try {
-			write(pin, val);
+			write(pin, (int) (val * 100));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

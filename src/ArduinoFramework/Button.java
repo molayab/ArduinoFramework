@@ -11,23 +11,29 @@ package ArduinoFramework;
 import java.io.IOException;
 
 public class Button extends Arduino {
+	private int pin;
 	private boolean value;
 	
 	public Button(int pin) {
 		super();
 		
-		setMode(Arduino.INPUT);
-		new Thread(this).start();
+		this.pin = pin;
 		
-		try {
-			write(pin, 0xD9);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		init();
 	}
 	
 	public boolean getValue() {
 		return value;
+	}
+	
+	public synchronized void init() {
+		try {
+			setMode(Arduino.INPUT);
+			setType(Arduino.DIGITAL);
+			write(pin, 0xD9);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override

@@ -19,11 +19,11 @@ import java.io.InputStreamReader;
 import java.util.Enumeration;
 
 
-public abstract class Arduino implements SerialPortEventListener, Runnable {
+public abstract class Arduino implements SerialPortEventListener {
 	public static final int OUTPUT = 0xFF;
-	public static final int INPUT = 0x00;
+	public static final int INPUT = 0xD9;
 	public static final int DIGITAL = 0xFF;
-	public static final int ANALOG = 0x00;
+	public static final int ANALOG = 0xD9;
 	public static final int PACKET_SIZE = 2;
 	private static final String PORT_NAMES[] = { 
 	    	"/dev/tty.usbmodem", 	// OSX
@@ -35,8 +35,6 @@ public abstract class Arduino implements SerialPortEventListener, Runnable {
 	private BufferedReader input;
 	private int mode;
 	private int type;
-	private int[] data = new int[2];
-	private int pointer = 0;
 	private static SerialPort port;
 	
 	public Arduino() {
@@ -74,6 +72,11 @@ public abstract class Arduino implements SerialPortEventListener, Runnable {
 						SerialPort.STOPBITS_1, 
 						SerialPort.PARITY_NONE);
 				
+				input  = new BufferedReader(new InputStreamReader(port.getInputStream()));
+				
+				port.addEventListener(this);
+				port.notifyOnDataAvailable(true);
+				port.notifyOnBreakInterrupt(true);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -118,37 +121,16 @@ public abstract class Arduino implements SerialPortEventListener, Runnable {
 	@Override
 	public synchronized void serialEvent(SerialPortEvent arg0) {
 		if (arg0.getEventType() == SerialPortEvent.DATA_AVAILABLE) {
-			synchronized (this) {
-				try {
-					if (pointer < PACKET_SIZE) {
-						data[pointer] = input.read();
-						++pointer;
-						System.out.println(pointer);
-					} else {
-						read(data[0], data[1]);
-						pointer = 0;
-					}
-				} catch (Exception e) {
-					System.err.println(e.getMessage());
-				}
+			try {
+				System.out.println(input.readLine());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 		
 		if (arg0.getEventType() == SerialPortEvent.BI) {
 			System.out.println("BI <---");
-		}
-	}
-	
-	@Override
-	public void run() {
-		try {
-			input  = new BufferedReader(new InputStreamReader(port.getInputStream()));
-			
-			port.addEventListener(this);
-			port.notifyOnDataAvailable(true);
-			port.notifyOnBreakInterrupt(true);
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
 }

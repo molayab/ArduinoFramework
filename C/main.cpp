@@ -19,6 +19,13 @@ typedef struct {
 	size_t size;
 } mapper;
 
+typedef struct {
+	uint8_t pin;
+	uint8_t mode;
+	uint8_t value;
+	uint8_t type;
+} packet_t;
+
 /**
  * Se definen las funciones del Mapper [Struct]
  */
@@ -40,20 +47,30 @@ void add_mapper(mapper * m, pin_map p) {
 
 /********************************************************/
 
-void process (uint8_t * packet);
+void process (packet_t * packet);
+void write(packet_t * packet);
 void read();
+
+mapper m;
 
 int main() {
     init();
     
+    init_mapper(&m, 2);
     Serial.begin(115200);
 
     for (;;) {
     	uint8_t buffer[PACKET_HEADER_SIZE];
 
     	if (Serial.available() >= PACKET_HEADER_SIZE) {
-    		for (int i = 0; i < PACKET_HEADER_SIZE; ++i) buffer[i] = Serial.read();
-    		process(buffer);
+    		for (int i = 0; i < PACKET_HEADER_SIZE; ++i) buffer[i] = Serial.read() & 0xFF;
+    		packet_t p;
+    		p.pin = buffer[0];
+    		p.mode = buffer[1];
+    		p.value = buffer[2];
+    		p.type = buffer[3];
+
+    		process(&p);
     	}
 
     	read();
@@ -62,7 +79,7 @@ int main() {
     return 0;
 }
 
-void process (uint8_t * packet) {
+void process (packet_t * packet) {
 	/*
 	 * Paquete de 4bytes que contiene la informacion necesaria para
 	 * la salida digital
@@ -75,19 +92,36 @@ void process (uint8_t * packet) {
 	 *   --> VALUE: Valor de salida del pin (uint8_t) 0-255 [0x00-0xFF]
 	 *   --> TYPE: Tipo de salida: DIGITAL=0xFF, ANALOG=0x00
 	 */
-	if (packet[1] == 0) {
-		pinMode(packet[0], INPUT );
+
+	if (packet->mode == 0xD9) {
+		pin_map p;
+		p.pin = packet->pin;
+		p.value = 0;
+
+		add_mapper(&m, p);
+
+		pinMode(packet->pin, INPUT );
 	} else {
-		pinMode(packet[0], OUTPUT);
+		pinMode(packet->pin, OUTPUT);
 	}
 
-	if (packet[3] == 0xFF) digitalWrite(packet[0], packet[2]);
-	else analogWrite(packet[0], packet[2]);
+	if (packet->type == 0xFF) digitalWrite(packet->pin, packet->value);
+	else analogWrite(packet->pin, packet->value);
 }
 
 void read() {
-	pinMode(3, INPUT);
+	for (int i = 0; i < m.length; ++i) {
+		pin_map p = m.data[i];
 
-	Serial.write(0x03);
-	Serial.write(digitalRead(3));
+		Serial.println(p.pin);
+	}
+
+	// delay(100);
+}
+
+void write(packet_t * packet) {
+	Serial.write(packet->pin);
+	Serial.write(packet->mode);
+	Serial.write(packet->value);
+	Serial.write(packet->type);
 }
