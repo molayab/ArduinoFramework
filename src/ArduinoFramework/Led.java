@@ -17,6 +17,7 @@ public class Led extends Arduino {
 		super();
 		setMode(Arduino.OUTPUT);
 		setType(Arduino.DIGITAL);
+		new Thread(this).start();
 		
 		this.pin = pin;
 	}

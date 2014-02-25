@@ -8,8 +8,37 @@
 #include "WProgram.h"
 #define PACKET_HEADER_SIZE 4
 
-uint8_t * pin_map;
-uint8_t pin_count = 0;
+typedef struct {
+	uint8_t pin;
+	uint8_t value;
+} pin_map;
+
+typedef struct {
+	pin_map * data;
+	size_t length;
+	size_t size;
+} mapper;
+
+/**
+ * Se definen las funciones del Mapper [Struct]
+ */
+
+void init_mapper(mapper * m, size_t s) {
+	m->data = (pin_map *) malloc(s * sizeof(pin_map));
+	m->length = 0;
+	m->size = s;
+}
+
+void add_mapper(mapper * m, pin_map p) {
+	if (m->length == m->size) {
+		m->size += 2;
+		m->data = (pin_map *) realloc(m->data, m->size * sizeof(pin_map));
+	}
+
+	m->data[m->length++] = p;
+}
+
+/********************************************************/
 
 void process (uint8_t * packet);
 void read();
@@ -47,16 +76,6 @@ void process (uint8_t * packet) {
 	 *   --> TYPE: Tipo de salida: DIGITAL=0xFF, ANALOG=0x00
 	 */
 	if (packet[1] == 0) {
-		uint8_t i = 0;
-		uint8_t __map[++pin_count];
-
-		for(; i < pin_count - 1; ++i) {
-			__map[i] = pin_map[i];
-		}
-
-		__map[i] = packet[0];
-		pin_map = __map;
-
 		pinMode(packet[0], INPUT );
 	} else {
 		pinMode(packet[0], OUTPUT);

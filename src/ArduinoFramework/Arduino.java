@@ -19,7 +19,7 @@ import java.io.InputStreamReader;
 import java.util.Enumeration;
 
 
-public abstract class Arduino implements SerialPortEventListener {
+public abstract class Arduino implements SerialPortEventListener, Runnable {
 	public static final int OUTPUT = 0xFF;
 	public static final int INPUT = 0x00;
 	public static final int DIGITAL = 0xFF;
@@ -74,11 +74,6 @@ public abstract class Arduino implements SerialPortEventListener {
 						SerialPort.STOPBITS_1, 
 						SerialPort.PARITY_NONE);
 				
-				input  = new BufferedReader(new InputStreamReader(port.getInputStream()));
-				
-				port.addEventListener(this);
-				port.notifyOnDataAvailable(true);
-				port.notifyOnBreakInterrupt(true);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -121,7 +116,7 @@ public abstract class Arduino implements SerialPortEventListener {
 	public abstract void read(int pin, int data);
 
 	@Override
-	public void serialEvent(SerialPortEvent arg0) {
+	public synchronized void serialEvent(SerialPortEvent arg0) {
 		if (arg0.getEventType() == SerialPortEvent.DATA_AVAILABLE) {
 			synchronized (this) {
 				try {
@@ -141,6 +136,19 @@ public abstract class Arduino implements SerialPortEventListener {
 		
 		if (arg0.getEventType() == SerialPortEvent.BI) {
 			System.out.println("BI <---");
+		}
+	}
+	
+	@Override
+	public void run() {
+		try {
+			input  = new BufferedReader(new InputStreamReader(port.getInputStream()));
+			
+			port.addEventListener(this);
+			port.notifyOnDataAvailable(true);
+			port.notifyOnBreakInterrupt(true);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 }

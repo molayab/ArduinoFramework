@@ -27,12 +27,18 @@ public class GUITest extends JFrame implements ActionListener, ChangeListener {
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setLayout(new GridLayout(3, 1));
 		
-		led1 = new Led(13);
-		led2 = new Led(9);
-		led2.setType(Arduino.ANALOG);
+		Thread t=new Thread() {
+			public void run() {
+				led1 = new Led(13);
+				led2 = new Led(9);
+				led2.setType(Arduino.ANALOG);
+				
+				Button btnButton = new Button(3);
+				Button btnButton2 = new Button(4);
+			}
+		};
+		t.start();
 		
-		Button btnButton = new Button(3);
-		Button btnButton2 = new Button(4);
 		
 		slider = new JSlider(0, 255, 0);
 		slider.addChangeListener(this);

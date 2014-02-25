@@ -17,6 +17,7 @@ public class Button extends Arduino {
 		super();
 		
 		setMode(Arduino.INPUT);
+		new Thread(this).start();
 		
 		try {
 			write(pin, 0xD9);
