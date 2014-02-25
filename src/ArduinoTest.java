@@ -12,7 +12,7 @@ public class ArduinoTest {
 		 * 2) Led variable en intensidad.
 		 * 3) GUI con Arduino
 		 */
-		int ejemplo = 2;
+		int ejemplo = 1;
 		
 		if (ejemplo == 1) {
 			Led l = new Led(13);
@@ -21,9 +21,9 @@ public class ArduinoTest {
 			btn.init();
 			
 			for (;;) {
-				Thread.sleep(300);
+				Thread.sleep(700);
 				l.on();
-				Thread.sleep(300);
+				Thread.sleep(700);
 				l.off();
 			}
 		} else if (ejemplo == 2) {

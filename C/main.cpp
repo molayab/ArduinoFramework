@@ -7,10 +7,13 @@
 //
 #include "WProgram.h"
 #define PACKET_HEADER_SIZE 4
+#define DIGITAL 0xFF
+#define ANALOG 0xD9
 
 typedef struct {
 	uint8_t pin;
 	uint8_t value;
+	uint8_t type;
 } pin_map;
 
 typedef struct {
@@ -97,6 +100,7 @@ void process (packet_t * packet) {
 		pin_map p;
 		p.pin = packet->pin;
 		p.value = 0;
+		p.type = packet->type;
 
 		add_mapper(&m, p);
 
@@ -105,13 +109,36 @@ void process (packet_t * packet) {
 		pinMode(packet->pin, OUTPUT);
 	}
 
-	if (packet->type == 0xFF) digitalWrite(packet->pin, packet->value);
+	if (packet->type == DIGITAL) digitalWrite(packet->pin, packet->value);
 	else analogWrite(packet->pin, packet->value);
 }
 
 void read() {
 	for (int i = 0; i < m.length; ++i) {
+		packet_t pack;
 		pin_map p = m.data[i];
+
+		if (p.type == DIGITAL) {
+			uint8_t r = digitalRead(p.pin);
+
+			if (p.value != r) {
+				pack.pin = p.pin;
+				pack.value = p.value;
+
+				write(&pack);
+				p.value = r;
+			}
+		} else {
+			uint8_t r = analogRead(p.pin) / 4;
+
+			if (p.value != r) {
+				pack.pin = p.pin;
+				pack.value = p.value;
+
+				write(&pack);
+				p.value = r;
+			}
+		}
 
 		Serial.println(p.pin);
 	}
