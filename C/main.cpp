@@ -69,6 +69,6 @@ void process (uint8_t * packet) {
 void read() {
 	pinMode(3, INPUT);
 
-	//Serial.write(0x03);
-	//Serial.write(digitalRead(3));
+	Serial.write(0x03);
+	Serial.write(digitalRead(3));
 }

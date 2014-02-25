@@ -9,7 +9,7 @@ CFLAGS=$(MCU) $(CPU_SPEED) -Os -w -Wl,--gc-sections -ffunction-sections -fdata-s
 PORT=/dev/tty.usbmodem1411 
 AVR_CONFIG=/Applications/Arduino.app/Contents/Resources/Java/hardware/tools/avr/etc/avrdude.conf
 
-default: build
+default: build upload clean
 
 ## Compilar el codigo:
 START=main
@@ -30,7 +30,6 @@ upload:
 clean:
 	rm *.elf
 	rm *.hex
-	rm *.o
 
 %.o: %.cpp
 	$(CXX) $< $(CFLAGS) $(INCLUDE) -c -o $@
