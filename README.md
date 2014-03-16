@@ -6,6 +6,8 @@ Arduino Framework comunica Java con Arduino pudiendo controlar con estos todos l
 Instalación
 ===========
 
+Link completo de la instalación de las dependencias RXTXComm (http://jlog.org/download.html).
+
 Es necesario instalar unas dependencias antes de poder usar el Framework.
 
 Descargar las bibliotecas necesarias:
