@@ -10,7 +10,7 @@ AVR_CONFIG=/Applications/Arduino.app/Contents/Resources/Java/hardware/tools/avr/
 # Compilador de C++/AVR si el path de AVR es vecio remover $(AVR)
 AVR_CXX=$(AVR)/avr-g++
 # AVRDUDE PORT Puerto donde esta conectado el Arduino.
-PORT=/dev/tty.usbmodem*
+PORT=/dev/tty.usb*
 
 ##
 # MCU Microcontroladro
