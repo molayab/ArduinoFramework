@@ -1,7 +1,7 @@
 *.class
 
 # Package Files #
-#*.jar
+*.jar
 *.war
 *.ear
 
@@ -12,9 +12,8 @@
 *.obj
 
 # Compiled Dynamic libraries
-#*.so
-#*.dylib
-#*.dll
+*.so
+*.dylib
 
 # Compiled Static libraries
 *.lai
@@ -22,10 +21,29 @@
 *.a
 *.lib
 
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Libraries
+*.lib
+*.a
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
 # Executables
 *.exe
 *.out
 *.app
+*.i*86
+*.x86_64
+*.hex
 
 # OSX
 .DS_Store
