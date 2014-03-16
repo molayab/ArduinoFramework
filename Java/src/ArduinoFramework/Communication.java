@@ -13,6 +13,7 @@ import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
 import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.TooManyListenersException;
 
@@ -35,6 +36,8 @@ public class Communication implements SerialPortEventListener {
     private SerialPort port;
     private String portName;
     private long packetCount;
+    private InputStream inputStream;
+    private byte[] buffer; 
     
     protected Communication() throws Exception {
         if (OS.isWindows()) {
@@ -56,9 +59,10 @@ public class Communication implements SerialPortEventListener {
      * @throws TooManyListenersException Demasiados Listeners en espera.
      * @throws UnsupportedCommOperationException Comunicación no soportada.
      * @throws PortInUseException Puerto en uso, conexión fallida.
+     * @throws IOException Excepcion en el input/output (Stream).
      */
     public void connect() throws PortInUseException, 
-            UnsupportedCommOperationException, TooManyListenersException {
+            UnsupportedCommOperationException, TooManyListenersException, IOException {
         Enumeration<?> ports = getPortsAvailable();
         CommPortIdentifier id = null;
 
@@ -75,7 +79,7 @@ public class Communication implements SerialPortEventListener {
     }
     
     private void configure(CommPortIdentifier portId) throws PortInUseException, 
-            UnsupportedCommOperationException, TooManyListenersException {
+            UnsupportedCommOperationException, TooManyListenersException, IOException {
         if (port == null) {
             /*
              * Posibles causa de excepciones:
@@ -89,6 +93,8 @@ public class Communication implements SerialPortEventListener {
                     SerialPort.STOPBITS_1,
                     SerialPort.PARITY_NONE);
 
+            inputStream = port.getInputStream(); 
+            
             port.addEventListener(this);
             port.notifyOnDataAvailable(true);
         }
@@ -177,6 +183,17 @@ public class Communication implements SerialPortEventListener {
     
     public synchronized void send(byte[] data) throws IOException {
         port.getOutputStream().write(makePacket(ENQ, data));
+        
+        for(;;) {
+            if (isValidPacket(buffer)) {
+                if (buffer[1] == NAK) {
+                    send(data);
+                }
+                
+                break;
+            }
+        }
+        
     }
     
     /**
@@ -194,11 +211,22 @@ public class Communication implements SerialPortEventListener {
             port.close();
         }
     }
+    
+    public boolean isValidPacket(byte[] packet) {
+        if (packet[0] == STX && packet[packet.length - 1] == ETX)
+            return checksum(packet, packet[packet.length - 2]);
+        
+        return false;
+    }
 
     @Override
     public void serialEvent(SerialPortEvent spe) {
         if (spe.getEventType() == SerialPortEvent.DATA_AVAILABLE) {
-            System.out.println("RECV: ");
+            try {                
+                inputStream.read(buffer, 0, inputStream.available());
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 }
