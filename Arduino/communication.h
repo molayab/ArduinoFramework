@@ -4,20 +4,28 @@
 #include <WProgram.h>
 #include "buffer.h"
 
-typedef uint8_t packet_t;
+typedef enum packet_flag {
+	ACK = 0x6,
+	NAK = 0x15,
+	ENQ = 0x5,
+	STX = 0x2,
+	ETX = 0x3
+} packet_flag;
 
 class Communication {
 private:
 	BufferStream buffer;
+	uint8_t packetCount;
 
 public:
 	Communication();
 	~Communication();
 
-	void send(packet_t * packet);
-	bool isValid(packet_t * packet);
-	bool checksum(packet_t * packet);
-	uint8_t makeChecksum(packet * packet);
+	void send(uint8_t * packet);
+	void recv();
+	bool isValid(uint8_t * packet);
+	void checksum(uint8_t * packet);
+	uint8_t * build(uint8_t * packet, packet_flag flag);
 };
 
 #endif

@@ -35,7 +35,7 @@ public class Communication implements SerialPortEventListener {
     
     private SerialPort port;
     private String portName;
-    private long packetCount;
+    private byte packetCount;
     private InputStream inputStream;
     private byte[] buffer; 
     
@@ -150,7 +150,7 @@ public class Communication implements SerialPortEventListener {
      * @return Paquete con los datos a eviar (MAX 256 bytes).
      * @throws IndexOutOfBoundsException Se súpero el tamaño maximo del contenido. (MAX 250 bytes).
      */
-    public byte[] makePacket(byte flag, byte[] data) throws IndexOutOfBoundsException {
+    public byte[] build(byte flag, byte[] data) throws IndexOutOfBoundsException {
         byte[] packet = new byte[data.length + 6];
         
         /*
@@ -161,7 +161,7 @@ public class Communication implements SerialPortEventListener {
         if (data.length <= 250) {
             packet[0] = STX;
             packet[1] = flag;
-            packet[2] = (byte)(packetCount++ % 255);
+            packet[2] = (byte)(packetCount++ & 0xFF);
             packet[3] = (byte)(0xFF & data.length);
             
             System.arraycopy(data, 0, packet, 4, data.length);
@@ -182,7 +182,7 @@ public class Communication implements SerialPortEventListener {
     }
     
     public synchronized void send(byte[] data) throws IOException {
-        port.getOutputStream().write(makePacket(ENQ, data));
+        port.getOutputStream().write(build(ENQ, data));
         
         for(;;) {
             if (isValidPacket(buffer)) {

@@ -20,7 +20,7 @@ public class Main {
             
             byte[] sender = "Este es mi primer mensaje: Hola Mundo!".getBytes();
             
-            byte[] data = comm.makePacket((byte)0x5, sender);
+            byte[] data = comm.build((byte)0x5, sender);
             
             
             System.out.println("Data length: " + data.length);
