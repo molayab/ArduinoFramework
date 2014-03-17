@@ -18,7 +18,14 @@ PORT=/dev/tty.usb*
 # atmega2560 :: Arduino Mega 2560
 # atmega328p :: Arduino UNO
 ##
-MCU=atmega328p
+MCU=atmega2560
+
+## AVRDUDE 
+# atmega2560 :: stk500v2
+# atmega328p :: stk500v1
+##
+AVRDUDE_PROTOCOL = stk500v2
+
 ##
 # Velocidad de reloj del arduino;
 # Por defecto: 16MHz -> 16000000UL
@@ -59,7 +66,7 @@ communication.o: communication.cpp
 
 ##################################################
 upload:
-	$(AVR_DUDE)/avrdude -C$(AVR_CONFIG) -V -F -p $(MCU) -c arduino -b 115200 -Uflash:w:main.hex -P $(PORT)
+	$(AVR_DUDE)/avrdude -C $(AVR_CONFIG) -V -F -p $(MCU) -c $(AVRDUDE_PROTOCOL) -b 115200 -Uflash:w:main.hex -P $(PORT)
 
 clean:
 	@echo -n Cleaning ...
