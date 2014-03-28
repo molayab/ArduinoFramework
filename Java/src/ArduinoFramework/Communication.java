@@ -192,7 +192,7 @@ public class Communication implements SerialPortEventListener {
                 
                 break;
             } else {
-                System.out.println("Error on communication, retrie #" + retry +
+                System.out.println("Error on communication, retry #" + retry +
                                    " of " + numberOfRetries);
             }
         }
