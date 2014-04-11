@@ -32,12 +32,18 @@ public class Communication implements SerialPortEventListener {
     private final byte ENQ = 0x5;
     private final byte STX = 0x2;
     private final byte ETX = 0x3;
+
+    private final int NUMBER_OF_RETIES = 3;
     
     private SerialPort port;
     private String portName;
     private byte packetCount;
     private InputStream inputStream;
     private byte[] buffer; 
+    private int numberOfRetriesLeft;
+    private int contRead;
+    private boolean cond1;
+    private boolean cond2;
     
     protected Communication() throws Exception {
         if (OS.isWindows()) {
@@ -49,6 +55,9 @@ public class Communication implements SerialPortEventListener {
         } else {
             throw new Exception("Controlador no encontrado.");
         }
+
+        numberOfRetriesLeft = NUMBER_OF_RETIES;
+        contRead = 0;
     }
     
     /**
@@ -182,18 +191,41 @@ public class Communication implements SerialPortEventListener {
     }
     
     public synchronized void send(byte[] data) throws IOException {
+        numberOfRetriesLeft = NUMBER_OF_RETIES;
+        // while(numberOfRetriesLeft>0) {
         port.getOutputStream().write(build(ENQ, data));
-        
-        for(;;) {
+        //TODO: espera paquete respuesta
+        cond1 = false;
+        cond2 = false;
+        while (!cond1 && !cond2) {
+            try {
+                wait();
+            } catch(InterruptedException ie) {
+            }
+
             if (isValidPacket(buffer)) {
                 if (buffer[1] == NAK) {
-                    send(data);
+
+                    port.getOutputStream().write(build(ENQ, data));
+                    numberOfRetriesLeft--;
+                } else if(buffer[1] == ACK) {
+                    buffer = null;
+                    cond1 = true;
+                    return ;
                 }
-                
-                break;
+            } else {
+                System.out.println("Error on communication, retrie #" + (NUMBER_OF_RETIES - numberOfRetriesLeft) +
+                        " of " + NUMBER_OF_RETIES);
+                numberOfRetriesLeft--;
+            }
+            if (numberOfRetriesLeft == 0) { 
+                cond2 = true;
             }
         }
-        
+    // }
+
+        System.out.println("Communication Error: number of retries exeded");
+        buffer = null;
     }
     
     /**
@@ -220,10 +252,17 @@ public class Communication implements SerialPortEventListener {
     }
 
     @Override
-    public void serialEvent(SerialPortEvent spe) {
+    public synchronized void serialEvent(SerialPortEvent spe) {
         if (spe.getEventType() == SerialPortEvent.DATA_AVAILABLE) {
-            try {                
-                inputStream.read(buffer, 0, inputStream.available());
+            try {
+                int cur = inputStream.read();
+                
+                buffer[contRead] = (byte) cur;
+                contRead++;
+                
+                if(cur == ETX){
+                   notify();
+                } 
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
