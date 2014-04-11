@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package ArduinoFramework;
 
 import gnu.io.CommPortIdentifier;
@@ -61,34 +60,34 @@ public class Communication implements SerialPortEventListener {
     }
     
     /**
-     * Conecta un dispositivo y lo prepara para su posterior uso, es 
+     * Conecta un dispositivo y lo prepara para su posterior uso, es
      * importante cerrar la conexión con el dispositivo una ves finalizado los
      * envío/recepción de datos.
-     * 
+     *
      * @throws TooManyListenersException Demasiados Listeners en espera.
      * @throws UnsupportedCommOperationException Comunicación no soportada.
      * @throws PortInUseException Puerto en uso, conexión fallida.
      * @throws IOException Excepcion en el input/output (Stream).
      */
-    public void connect() throws PortInUseException, 
-            UnsupportedCommOperationException, TooManyListenersException, IOException {
+    public void connect() throws PortInUseException,
+    UnsupportedCommOperationException, TooManyListenersException, IOException {
         Enumeration<?> ports = getPortsAvailable();
         CommPortIdentifier id = null;
-
+        
         while (id == null && ports.hasMoreElements()) {
             CommPortIdentifier portId
-                    = (CommPortIdentifier) ports.nextElement();
+            = (CommPortIdentifier) ports.nextElement();
             
-            if (portId.getName().equals(portName) 
-                    || portId.getName().startsWith(portName)) {
+            if (portId.getName().equals(portName)
+                || portId.getName().startsWith(portName)) {
                 
                 configure(portId);
             }
         }
     }
     
-    private void configure(CommPortIdentifier portId) throws PortInUseException, 
-            UnsupportedCommOperationException, TooManyListenersException, IOException {
+    private void configure(CommPortIdentifier portId) throws PortInUseException,
+    UnsupportedCommOperationException, TooManyListenersException, IOException {
         if (port == null) {
             /*
              * Posibles causa de excepciones:
@@ -98,11 +97,11 @@ public class Communication implements SerialPortEventListener {
              */
             port = (SerialPort) portId.open(BUNDLE_ID, TIMEOUT);
             port.setSerialPortParams(BAUDRATE,
-                    SerialPort.DATABITS_8,
-                    SerialPort.STOPBITS_1,
-                    SerialPort.PARITY_NONE);
-
-            inputStream = port.getInputStream(); 
+                                     SerialPort.DATABITS_8,
+                                     SerialPort.STOPBITS_1,
+                                     SerialPort.PARITY_NONE);
+            
+            inputStream = port.getInputStream();
             
             port.addEventListener(this);
             port.notifyOnDataAvailable(true);
@@ -116,7 +115,7 @@ public class Communication implements SerialPortEventListener {
     /**
      * (Singleton) Crea una nueva instancia de la comunicación si esta no existe
      * en caso que exista devuelve la instancia.
-     * 
+     *
      * @return Instancia de la clase Communication
      * @throws Exception OS no es compatible con las librerías.
      */
@@ -153,7 +152,7 @@ public class Communication implements SerialPortEventListener {
     
     /**
      * Crea un nuevo paquete para ser enviado al dispositivo.
-     * 
+     *
      * @param flag Byte de estado ENQ, ANK, NAK (ENQ: Para request).
      * @param data Bytes a enviar.
      * @return Paquete con los datos a eviar (MAX 256 bytes).
@@ -202,7 +201,6 @@ public class Communication implements SerialPortEventListener {
                 wait();
             } catch(InterruptedException ie) {
             }
-
             if (isValidPacket(buffer)) {
                 if (buffer[1] == NAK) {
 
@@ -230,7 +228,7 @@ public class Communication implements SerialPortEventListener {
     
     /**
      * Puertos disponibles para la comunicación serial.
-     * 
+     *
      * @return Enumeration Puertos disponibles.
      */
     public Enumeration<?> getPortsAvailable() {
@@ -250,7 +248,7 @@ public class Communication implements SerialPortEventListener {
         
         return false;
     }
-
+    
     @Override
     public synchronized void serialEvent(SerialPortEvent spe) {
         if (spe.getEventType() == SerialPortEvent.DATA_AVAILABLE) {
