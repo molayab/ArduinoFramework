@@ -191,16 +191,16 @@ public class Communication implements SerialPortEventListener {
     
     public synchronized void send(byte[] data) throws IOException {
         numberOfRetriesLeft = NUMBER_OF_RETIES;
-        // while(numberOfRetriesLeft>0) {
         port.getOutputStream().write(build(ENQ, data));
-        //TODO: espera paquete respuesta
+        
         cond1 = false;
         cond2 = false;
+        
         while (!cond1 && !cond2) {
             try {
                 wait();
-            } catch(InterruptedException ie) {
-            }
+            } catch(InterruptedException ie) { }
+            
             if (isValidPacket(buffer)) {
                 if (buffer[1] == NAK) {
 
@@ -220,7 +220,6 @@ public class Communication implements SerialPortEventListener {
                 cond2 = true;
             }
         }
-    // }
 
         System.out.println("Communication Error: number of retries exeded");
         buffer = null;
@@ -235,7 +234,7 @@ public class Communication implements SerialPortEventListener {
         return CommPortIdentifier.getPortIdentifiers();
     }
     
-    public void close() {
+    public synchronized void close() {
         if (port != null) {
             port.removeEventListener();
             port.close();
