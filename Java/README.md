@@ -31,6 +31,10 @@ Descargar las bibliotecas necesarias:
 ```bash
 export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/Library/Java/Extensions
 ```
-
+**UNIX-LIKE**
+```bash
+sudo mkdir /var/lock
+sudo chmod a+rw /var/lock
+```
 
 

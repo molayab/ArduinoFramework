@@ -1,40 +1,106 @@
-//
-//  Main.cpp
-//  ArduinoFramework Java
-//
-//  Created by Mateo Olaya Bernal on 1/22/14.
-//  Copyright (c) 2014 Mateo Olaya Bernal. All rights reserved.
-//
 #include <WProgram.h>
+#include <stdlib.h>
+#include <stdint.h>
 #include "communication.h"
-#include "buffer.h"
+
+struct buffer_t {
+	size_t size;
+	size_t length;
+	size_t seek;
+	uint8_t * content;
+};
+
+void buffer_init(struct buffer_t * __buffer) {
+	__buffer->length = 0;
+	__buffer->seek = 0;
+	__buffer->size = 4;
+
+	__buffer->content = (uint8_t *) malloc(__buffer->size * sizeof(uint8_t));
+}
+
+void buffer_append(struct buffer_t * __buffer, uint8_t __byte) {
+	if (__buffer->length == __buffer->size) {
+		__buffer->size += 4;
+
+		__buffer->content = (uint8_t *) realloc(__buffer->content, (__buffer->size * sizeof(uint8_t)));
+	}
+
+	__buffer->content[__buffer->length++] = __byte;
+}
+
+uint8_t buffer_read(struct buffer_t * __buffer) {
+	if (__buffer->seek < __buffer->length) {
+		return __buffer->content[__buffer->seek++];
+	}
+
+	return 0;
+}
+
+void buffer_clear(struct buffer_t * __buffer) {
+	__buffer->length = 0;
+	__buffer->size = 0;
+
+	free(__buffer->content);
+	__buffer->content = NULL;
+} 
+
+buffer_t * buffer;
+packet_t * packet;
+
+void thread();
+void read();
 
 int main() {
-    init();
-    
-    Serial.begin(115200);
+	// Initialize board, GPIO, Serial, etc.
+	init();
+	pinMode(13, OUTPUT);
 
-    BufferStream b;
-    Communication comm;
+	// Prepare pre-configure package.
+	packet->start = 0x2;
+	packet->flag = 0x6;
+	packet->p_id = 0x0;
+	packet->d_size = 0xA;
+	packet->data = (uint8_t *)"HelloWorld";
+	packet->checksum = 0;
+	packet->end = 0x3;
 
-    uint8_t * p;
-    uint8_t data[] = {1, 2, 3, 4, 5, 6, 7};
+	packet_checksum(packet);
 
-    for(;;) {
-    	
+	// Initialize buffer.
+	buffer_init(buffer);
 
-    	while (Serial.available() > 0) {
-    		uint8_t s = Serial.read();
-    		b.appendByte(s);
-    	}
+	// Initialize serial communication at 115200 bauds.
+	Serial.begin(115200);
 
-    	p = comm.build(data, ACK);
-    	free(p);
-    	p = NULL;
+	// Send pre-configure package
+	packet_send(packet);
 
-    	delay(50);
-    	b.flush();
-    }
-    
-    return 0;
+	// Main thread
+	for (;;) {
+		thread();
+	}
+}
+
+void thread() {
+	// It has bytes on queue. When it has got ETX byte, read it.
+	if (Serial.available() > 0) {
+		uint8_t recv = (uint8_t) Serial.read();
+
+		if (recv != 0x3) {
+			buffer_append(buffer, recv);
+		} else {
+			buffer_append(buffer, (uint8_t) 0x3);
+
+			read();
+		}
+	}
+
+	Serial.println("Hello?");
+}
+
+void read() {
+	// Do something with the data.
+	digitalWrite(13, HIGH);
+
+	buffer_clear(buffer);
 }

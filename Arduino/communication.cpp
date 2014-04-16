@@ -1,66 +1,52 @@
+#include <WProgram.h>
 #include "communication.h"
-#include <string.h>
-#include <stdlib.h>
 
-Communication::Communication() {
-	packetCount = 0;
-}
+void packet_send(struct packet_t * __packet) {
+	uint8_t i;
 
-Communication::~Communication() {
+	// Starts transmission.
+	Serial.write(__packet->start);
+	Serial.write(__packet->flag);
+	Serial.write(__packet->p_id);
+	Serial.write(__packet->d_size);
 
-}
-
-void Communication::send(uint8_t * packet) {
-
-}
-
-void Communication::recv() {
-
-}
-
-bool Communication::isValid(uint8_t * packet) {
-
-}
-
-void Communication::checksum(uint8_t * packet) {
-	uint8_t checksum = 0;
-	size_t length = (sizeof(packet) / sizeof(uint8_t));
-
-	for (int i = 0; i < length; ++i) {
-		checksum ^= packet[i];
+	for (i = 0; i < __packet->d_size; ++i) {
+		Serial.write(__packet->data[i]);
 	}
 
-	packet[length - 2] = checksum;
+	Serial.write(__packet->checksum);
+	Serial.write(__packet->end);
 }
 
-uint8_t * Communication::build(uint8_t * packet, packet_flag flag) {
-	uint8_t * p;
-	size_t len = sizeof(packet) / sizeof(uint8_t);
+void packet_checksum(struct packet_t * __packet) {
+	uint8_t i, check = 0;
+	
+	check ^= __packet->start;
+	check ^= __packet->flag;
+	check ^= __packet->p_id;
+	check ^= __packet->d_size;
 
-	p = (uint8_t *) malloc((len + 6) * sizeof(uint8_t));
+	for (i = 0; i < __packet->d_size; ++i) {
+		check ^= __packet->data[i];
+	}
 
-	p[0] = (uint8_t) 2;
-	p[1] = (uint8_t) flag;
-	p[2] = (uint8_t) packetCount++;
-	p[3] = (uint8_t) len;
+	check ^= __packet->end;
 
-	//memcpy(p + 4, packet, len);
+	__packet->checksum = check;
+}
 
-	p[len + 4] = 0;
-	p[len + 5] = (uint8_t) 3;
+bool packet_validate(struct packet_t * __packet) {
+	uint8_t tmp_check;
 
-	checksum(p);
+	tmp_check = __packet->checksum;
+	__packet->checksum = 0;
 
-	Serial.print((int)p[0]);
-	Serial.print(" ");
-	Serial.print((int)p[1]);
-	Serial.print(" ");
-	Serial.print((int)p[2]);
-	Serial.print(" ");
-	Serial.print((int)p[3]);
-	Serial.print(" ");
-	Serial.print((int)p[len + 4]);
-	Serial.println("");
+	packet_checksum(__packet);
 
-	return p;
+	if (__packet->checksum == tmp_check) {
+		return true;
+	}
+	
+	__packet->checksum = tmp_check;
+	return false;
 }

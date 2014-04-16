@@ -13,6 +13,8 @@ import gnu.io.SerialPortEventListener;
 import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 import java.util.Enumeration;
 import java.util.TooManyListenersException;
 
@@ -37,7 +39,7 @@ public class Communication implements SerialPortEventListener {
     private SerialPort port;
     private String portName;
     private byte packetCount;
-    private InputStream inputStream;
+    private BufferedReader inputStream;
     private byte[] buffer; 
     private int numberOfRetriesLeft;
     private int contRead;
@@ -100,9 +102,9 @@ public class Communication implements SerialPortEventListener {
                                      SerialPort.DATABITS_8,
                                      SerialPort.STOPBITS_1,
                                      SerialPort.PARITY_NONE);
-            
-            inputStream = port.getInputStream();
-            
+
+            inputStream = new BufferedReader(new InputStreamReader(port.getInputStream()));
+
             port.addEventListener(this);
             port.notifyOnDataAvailable(true);
         }
@@ -193,36 +195,36 @@ public class Communication implements SerialPortEventListener {
         numberOfRetriesLeft = NUMBER_OF_RETIES;
         port.getOutputStream().write(build(ENQ, data));
         
-        cond1 = false;
-        cond2 = false;
+        // cond1 = false;
+        // cond2 = false;
         
-        while (!cond1 && !cond2) {
-            try {
-                wait();
-            } catch(InterruptedException ie) { }
-            
-            if (isValidPacket(buffer)) {
-                if (buffer[1] == NAK) {
+        // while (!cond1 && !cond2) {
+        //     //try {
+        //     //    wait();
+        //     //} catch(InterruptedException ie) { }
 
-                    port.getOutputStream().write(build(ENQ, data));
-                    numberOfRetriesLeft--;
-                } else if(buffer[1] == ACK) {
-                    buffer = null;
-                    cond1 = true;
-                    return ;
-                }
-            } else {
-                System.out.println("Error on communication, retrie #" + (NUMBER_OF_RETIES - numberOfRetriesLeft) +
-                        " of " + NUMBER_OF_RETIES);
-                numberOfRetriesLeft--;
-            }
-            if (numberOfRetriesLeft == 0) { 
-                cond2 = true;
-            }
-        }
+        //     if (isValidPacket(buffer)) {
+        //         if (buffer[1] == NAK) {
 
-        System.out.println("Communication Error: number of retries exeded");
-        buffer = null;
+        //             port.getOutputStream().write(build(ENQ, data));
+        //             numberOfRetriesLeft--;
+        //         } else if(buffer[1] == ACK) {
+        //             buffer = null;
+        //             cond1 = true;
+        //             return ;
+        //         }
+        //     } else {
+        //         System.out.println("Error on communication, retrie #" + (NUMBER_OF_RETIES - numberOfRetriesLeft) +
+        //                 " of " + NUMBER_OF_RETIES);
+        //         numberOfRetriesLeft--;
+        //     }
+        //     if (numberOfRetriesLeft == 0) { 
+        //         cond2 = true;
+        //     }
+        // }
+
+        // System.out.println("Communication Error: number of retries exeded");
+        // buffer = null;
     }
     
     /**
@@ -257,6 +259,8 @@ public class Communication implements SerialPortEventListener {
                 buffer[contRead] = (byte) cur;
                 contRead++;
                 
+                System.out.println("-->" + (char)cur);
+
                 if(cur == ETX){
                    notify();
                 } 

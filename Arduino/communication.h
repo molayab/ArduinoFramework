@@ -1,31 +1,20 @@
-#ifndef _COMM_GUARD
-#define _COMM_GUARD
+#ifndef COMMUNICATION_H
+#define COMMUNICATION_H
+#include <stdlib.h>
+#include <stdint.h> 
 
-#include <WProgram.h>
-#include "buffer.h"
-
-typedef enum packet_flag {
-	ACK = 0x6,
-	NAK = 0x15,
-	ENQ = 0x5,
-	STX = 0x2,
-	ETX = 0x3
-} packet_flag;
-
-class Communication {
-private:
-	BufferStream buffer;
-	uint8_t packetCount;
-
-public:
-	Communication();
-	~Communication();
-
-	void send(uint8_t * packet);
-	void recv();
-	bool isValid(uint8_t * packet);
-	void checksum(uint8_t * packet);
-	uint8_t * build(uint8_t * packet, packet_flag flag);
+struct packet_t {
+	uint8_t start;
+	uint8_t flag;
+	uint8_t p_id;
+	uint8_t d_size;
+	uint8_t * data;
+	uint8_t checksum;
+	uint8_t end;
 };
+
+void packet_send(struct packet_t * __packet);
+void packet_checksum(struct packet_t * __packet);
+bool packet_validate(struct packet_t * __packet);
 
 #endif

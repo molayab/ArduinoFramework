@@ -18,13 +18,13 @@ PORT=/dev/tty.usb*
 # atmega2560 :: Arduino Mega 2560
 # atmega328p :: Arduino UNO
 ##
-MCU=atmega2560
+MCU=atmega328p
 
 ## AVRDUDE 
 # atmega2560 :: stk500v2
 # atmega328p :: stk500v1
 ##
-AVRDUDE_PROTOCOL = stk500v2
+AVRDUDE_PROTOCOL = stk500v1
 
 ##
 # Velocidad de reloj del arduino;
@@ -45,7 +45,7 @@ CFLAGS=-mmcu=$(MCU) $(CPU_SPEED) -Os -w -Wl,--gc-sections -ffunction-sections -f
 default: build upload clean
 
 ## Compilar el codigo:
-OBJECTS=buffer.o communication.o
+OBJECTS=communication.o
 
 default: build upload
 
@@ -58,8 +58,6 @@ main.elf: main.cpp $(OBJECTS)
 	$(AVR_CXX) $(CFLAGS) $(INCLUDE) $^ -o $@ $(LIBS)
 
 ## DEPENDENCIAS ##################################
-buffer.o: buffer.cpp
-	$(AVR_CXX) -c buffer.cpp $(CFLAGS) $(INCLUDE)
 
 communication.o: communication.cpp
 	$(AVR_CXX) -c communication.cpp $(CFLAGS) $(INCLUDE)

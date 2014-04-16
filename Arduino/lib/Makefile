@@ -3,7 +3,7 @@ AVR=/Applications/Arduino.app/Contents/Resources/Java/hardware/tools/avr/bin
 AVR_CC=$(AVR)/avr-gcc
 AVR_CXX=$(AVR)/avr-g++
 AVR_AR=$(AVR)/avr-ar
-MCU=atmega2560
+MCU=atmega328p
 CPU_SPEED=16000000UL
 BOARD=arduino
 ##########################################
