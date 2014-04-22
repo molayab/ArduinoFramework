@@ -5,17 +5,17 @@ void packet_send(struct packet_t * __packet) {
 	uint8_t i;
 
 	// Starts transmission.
-	Serial.write(__packet->start);
-	Serial.write(__packet->flag);
-	Serial.write(__packet->p_id);
-	Serial.write(__packet->d_size);
+	Serial.print((char)__packet->start);
+	Serial.print((char)__packet->flag);
+	Serial.print((char)__packet->p_id);
+	Serial.print((char)__packet->d_size);
 
 	for (i = 0; i < __packet->d_size; ++i) {
-		Serial.write(__packet->data[i]);
+		Serial.print((char)__packet->data[i]);
 	}
 
-	Serial.write(__packet->checksum);
-	Serial.write(__packet->end);
+	Serial.print((char)__packet->checksum);
+	Serial.print((char)__packet->end);
 }
 
 void packet_checksum(struct packet_t * __packet) {

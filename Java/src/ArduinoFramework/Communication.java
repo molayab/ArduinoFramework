@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.util.Enumeration;
 import java.util.TooManyListenersException;
 
@@ -25,7 +26,7 @@ import java.util.TooManyListenersException;
 public class Communication implements SerialPortEventListener {
     private static Communication instance = null;
     private final String BUNDLE_ID = "ardujava_1.0";
-    private final int TIMEOUT = 1;
+    private final int TIMEOUT = 128;
     private final int BAUDRATE = 115200;
     
     private final byte ACK = 0x6;
@@ -40,7 +41,7 @@ public class Communication implements SerialPortEventListener {
     private String portName;
     private byte packetCount;
     private BufferedReader inputStream;
-    private byte[] buffer; 
+    private ByteArrayOutputStream buffer; 
     private int numberOfRetriesLeft;
     private int contRead;
     private boolean cond1;
@@ -48,15 +49,20 @@ public class Communication implements SerialPortEventListener {
     
     protected Communication() throws Exception {
         if (OS.isWindows()) {
+            Log.notice("Using Windows; will connect to COM*");
             portName = "COM";
         } else if (OS.isUnix()) {
+            Log.notice("Using UNIX-LIKE maybe Linux; will connect to /dev/tty*");
             portName = "/dev/tty";
         } else if (OS.isMac()) {
+            Log.notice("Using Darwin (UNIX-LIKE) maybe OSX; will connect to /dev/tty.usbmodem*");
             portName = "/dev/tty.usbmodem";
         } else {
+            Log.error("Driver not found.");
             throw new Exception("Controlador no encontrado.");
         }
 
+        buffer = new ByteArrayOutputStream();
         numberOfRetriesLeft = NUMBER_OF_RETIES;
         contRead = 0;
     }
@@ -76,16 +82,29 @@ public class Communication implements SerialPortEventListener {
         Enumeration<?> ports = getPortsAvailable();
         CommPortIdentifier id = null;
         
+        Log.notice("Connecting...");
+
         while (id == null && ports.hasMoreElements()) {
             CommPortIdentifier portId
             = (CommPortIdentifier) ports.nextElement();
             
             if (portId.getName().equals(portName)
                 || portId.getName().startsWith(portName)) {
-                
-                configure(portId);
+
+                Log.notice("Conneced to " + portId.getName());
+
+                if (portId != null) {
+                    configure(portId);
+                    Log.ok("Configure port to use.");
+                } else {
+                    Log.error("Could not find COM or TTY port.");
+                }
+
+                return;
             }
         }
+
+        Log.error("Link unsuccessful.");
     }
     
     private void configure(CommPortIdentifier portId) throws PortInUseException,
@@ -107,6 +126,8 @@ public class Communication implements SerialPortEventListener {
 
             port.addEventListener(this);
             port.notifyOnDataAvailable(true);
+
+            Log.ok("Link successful");
         }
     }
     
@@ -194,37 +215,40 @@ public class Communication implements SerialPortEventListener {
     public synchronized void send(byte[] data) throws IOException {
         numberOfRetriesLeft = NUMBER_OF_RETIES;
         port.getOutputStream().write(build(ENQ, data));
+
+        cond1 = false;
+        cond2 = false;
         
-        // cond1 = false;
-        // cond2 = false;
-        
-        // while (!cond1 && !cond2) {
-        //     //try {
-        //     //    wait();
-        //     //} catch(InterruptedException ie) { }
+        while (!cond1 && !cond2) {
+            try {
+               wait();
+            } catch(InterruptedException ie) { }
 
-        //     if (isValidPacket(buffer)) {
-        //         if (buffer[1] == NAK) {
+            byte[] buff = buffer.toByteArray();
 
-        //             port.getOutputStream().write(build(ENQ, data));
-        //             numberOfRetriesLeft--;
-        //         } else if(buffer[1] == ACK) {
-        //             buffer = null;
-        //             cond1 = true;
-        //             return ;
-        //         }
-        //     } else {
-        //         System.out.println("Error on communication, retrie #" + (NUMBER_OF_RETIES - numberOfRetriesLeft) +
-        //                 " of " + NUMBER_OF_RETIES);
-        //         numberOfRetriesLeft--;
-        //     }
-        //     if (numberOfRetriesLeft == 0) { 
-        //         cond2 = true;
-        //     }
-        // }
+            if (isValidPacket(buff)) {
+                if (buff[1] == NAK) {
 
-        // System.out.println("Communication Error: number of retries exeded");
-        // buffer = null;
+                    port.getOutputStream().write(build(ENQ, data));
+                    numberOfRetriesLeft--;
+                } else if(buff[1] == ACK) {
+                    buffer.reset();
+                    cond1 = true;
+                    return ;
+                }
+            } else {
+                Log.error("Error on communication, retrie #" + (NUMBER_OF_RETIES - numberOfRetriesLeft) +
+                        " of " + NUMBER_OF_RETIES);
+
+                numberOfRetriesLeft--;
+            }
+            if (numberOfRetriesLeft == 0) { 
+                cond2 = true;
+            }
+        }
+
+        Log.error("Communication Error: number of retries exeded");
+        buffer.reset();
     }
     
     /**
@@ -244,8 +268,9 @@ public class Communication implements SerialPortEventListener {
     }
     
     public boolean isValidPacket(byte[] packet) {
-        if (packet[0] == STX && packet[packet.length - 1] == ETX)
+        if (packet[0] == STX && packet[packet.length - 1] == ETX) {
             return checksum(packet, packet[packet.length - 2]);
+        }
         
         return false;
     }
@@ -254,14 +279,28 @@ public class Communication implements SerialPortEventListener {
     public synchronized void serialEvent(SerialPortEvent spe) {
         if (spe.getEventType() == SerialPortEvent.DATA_AVAILABLE) {
             try {
-                int cur = inputStream.read();
+                byte cur = (byte)(inputStream.read() & 0xFF);
+
+                Log.notice("Read byte -> " + String.format("%2s", Integer.toHexString(cur)), true);
                 
-                buffer[contRead] = (byte) cur;
-                contRead++;
-                
-                System.out.println("-->" + (char)cur);
+                buffer.write(cur);
 
                 if(cur == ETX){
+                    Log.notice("Received x03: End of text flag.");
+                    
+                    byte[] buff = buffer.toByteArray();
+
+                    if (isValidPacket(buff)) {
+                        Log.ok("Packet is valid, wait...");
+
+
+                    } else {
+                        Log.error("Packet isn't valid.");
+
+                        // ENVIAR NAK
+                    }
+
+                    //buffer.reset();
                    notify();
                 } 
             } catch (IOException ex) {

@@ -18,27 +18,14 @@ public class Main {
         try {
             Communication comm = Communication.getInstance();
             comm.connect();
-
-            System.out.print("waiting... ");
             Thread.sleep(1000);
-            System.out.println("done.");
 
-            Thread t=new Thread() {
-                public void run() {
-                //the following line will keep this app alive for 1000 seconds,
-                //waiting for events to occur and responding to them (printing incoming messages to console).
-                    try {
-                        
-                            comm.send("I'm here!!!".getBytes());
-                            
-                            Thread.sleep(100000000);
-                        
-                    } catch (Exception ie) {}
-                }
-            };
-            
-            t.start();
-            System.out.println("Started");
+            comm.send("HelloWorld".getBytes());
+            comm.send("HelloWorld".getBytes());
+            comm.send("HelloWorld".getBytes());
+            comm.send("HelloWorld".getBytes());
+            comm.send("HelloWorld".getBytes());
+            comm.send("HelloWorld".getBytes());
             
             // byte[] sender = "Este es mi primer mensaje: Hola Mundo!".getBytes();
             

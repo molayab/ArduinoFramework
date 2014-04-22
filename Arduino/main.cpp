@@ -45,7 +45,7 @@ void buffer_clear(struct buffer_t * __buffer) {
 } 
 
 buffer_t * buffer;
-packet_t * packet;
+packet_t packet;
 
 void thread();
 void read();
@@ -55,16 +55,18 @@ int main() {
 	init();
 	pinMode(13, OUTPUT);
 
-	// Prepare pre-configure package.
-	packet->start = 0x2;
-	packet->flag = 0x6;
-	packet->p_id = 0x0;
-	packet->d_size = 0xA;
-	packet->data = (uint8_t *)"HelloWorld";
-	packet->checksum = 0;
-	packet->end = 0x3;
+	char * data = "";
 
-	packet_checksum(packet);
+	// Prepare pre-configure package.
+	packet.start = 0x2;
+	packet.flag = 0x6;
+	packet.p_id = 0x0;
+	packet.d_size = 0x0;
+	packet.data = (uint8_t *) data;
+	packet.checksum = 0;
+	packet.end = 0x3;
+
+	packet_checksum(&packet);
 
 	// Initialize buffer.
 	buffer_init(buffer);
@@ -73,7 +75,7 @@ int main() {
 	Serial.begin(115200);
 
 	// Send pre-configure package
-	packet_send(packet);
+	//packet_send(&packet);
 
 	// Main thread
 	for (;;) {
@@ -93,9 +95,13 @@ void thread() {
 
 			read();
 		}
+
+		
 	}
 
-	Serial.println("Hello?");
+packet_send(&packet);
+	//packet_send(&packet);
+	//Serial.println("HelloWorld");
 }
 
 void read() {
